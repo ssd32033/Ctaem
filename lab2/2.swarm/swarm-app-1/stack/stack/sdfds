@@ -1,0 +1,62 @@
+version: "3"
+services: 
+  bretfisher:
+    image: bretfisher/examplevotingapp_vote:latest
+    ports: 
+        - 80:80
+    networks:
+        - frontend
+    placement:
+       constraints: [node.role != manager]
+
+  redis:
+    image: redis:3.2
+    privileged: true
+    tty: true
+    networks:
+      - frontend
+    depends_on:
+      - bretfisher
+    placement:
+       constraints: [node.role != manager]
+
+  worker:
+    image: bretfisher/examplevotingapp_worker:java
+    privileged: true
+    tty: true
+    networks:
+      - frontend
+    depends_on:
+      - redis
+    placement:
+       constraints: [node.role != manager]
+
+  db:
+    image: postgres:9.4
+    privileged: true
+    tty: true
+    networks:
+      - backend
+    depends_on:
+      - worker   
+    placement:
+       constraints: [node.role != manager]
+
+  result-app:
+    image: bretfisher/examplevotingapp_result
+    privileged: true
+    tty: true
+    ports: 
+      - 15001:80
+    networks:
+      - backend
+    depends_on:
+      - db 
+    placement:
+       constraints: [node.role != manager]
+       
+networks:
+  frontend:
+      external: true
+  backend:
+      external: true
